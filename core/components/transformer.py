@@ -66,10 +66,10 @@ class TransformerBlock(nn.Module):
         self.ln1 = nn.LayerNorm(embedding_size)
         # NOTE: dropout goes here
         if self.is_decoder:
-            self.cross_attn = MultiheadAttention(num_heads, head_size)
+            self.cross_attn = MultiheadAttention(num_heads, num_heads, head_size)
             self.ln2 = nn.LayerNorm(embedding_size)
             # NOTE: dropout goes here
-        self.ffwd = FeedForward()
+        self.ffwd = FeedForward(embedding_size)
         self.ln3 = nn.LayerNorm(embedding_size)
 
     def forward(self, first_inp, first_mask, second_inp=None, second_mask=None):
@@ -91,6 +91,7 @@ class TransformerBlock(nn.Module):
 
 class Encoder(nn.Module):
     def __init__(self, embedding_size, layers, heads):
+        super().__init__()
         self.layers = nn.ModuleList(
             [
                 TransformerBlock(embedding_size, heads, is_decoder=False)
@@ -98,19 +99,20 @@ class Encoder(nn.Module):
             ]
         )
 
-    def forward(self, x):
+    def forward(self, x, mask):
         for layer in self.layers:
-            x = layer(x)
+            x = layer(x, mask)
         return x
 
 
 class Decoder(nn.Module):
     def __init__(self, embedding_size, layers, heads):
+        super().__init__()
         self.layers = nn.ModuleList(
             [TransformerBlock(embedding_size, heads) for _ in range(layers)]
         )
 
-    def forward(self, dec_out, enc_inp):
+    def forward(self, dec_out, tgt_mask, enc_src, enc_mask):
         for layer in self.layers:
-            x = layer(dec_out, enc_inp)
+            x = layer(dec_out, tgt_mask, enc_src, enc_mask)
         return x
