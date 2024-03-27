@@ -11,7 +11,7 @@ class Head(nn.Module):
         self.qW = nn.Linear(embedding_size, head_size)
 
     def forward(self, k, v, q, mask):
-        B, T, C = k.shape
+        B, T, C = q.shape
         # h = head_size
         k = self.kW(k)  # (B, Te, C) @ (C, h) -> (B, Te, h)
         q = self.qW(q)  # (B, Td, C) @ (C, h) -> (B, Td, h)
@@ -20,7 +20,7 @@ class Head(nn.Module):
         )  # (B, Td, h) @ (B, h, Te) -> (B, Td, Te)
         if mask is not None:
             # NOTE: masking should be done with mask[:Td, :Te]?
-            attn = attn.masked_fill(mask[:T, :T] == 0, float("-inf"))
+            attn = attn.masked_fill(mask[:, :T] == 0, float("-inf"))
         attn = F.softmax(attn, dim=-1)
         # NOTE: dropout goes here
         v = self.vW(v)  # (B, Te, C) @ (C, h) -> (B, Te, h)
