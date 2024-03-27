@@ -13,16 +13,18 @@ class Head(nn.Module):
     def forward(self, k, v, q, mask):
         B, T, C = k.shape
         # h = head_size
-        k = self.kW(k)  # (B,T,C) @ (C, h) -> (B, T, h)
-        q = self.qW(q)  # (B,T,C) @ (C, h) -> (B, T, h)
-        attn = q @ k.transpose(-1, -2) * C**-0.5  # (B,T,h) @ (B,h,T) -> (B,T,T)
+        k = self.kW(k)  # (B, Te, C) @ (C, h) -> (B, Te, h)
+        q = self.qW(q)  # (B, Td, C) @ (C, h) -> (B, Td, h)
+        attn = (
+            q @ k.transpose(-1, -2) * C**-0.5
+        )  # (B, Td, h) @ (B, h, Te) -> (B, Td, Te)
         if mask is not None:
             # NOTE: masking should be done with mask[:Td, :Te]?
             attn = attn.masked_fill(mask[:T, :T] == 0, float("-inf"))
         attn = F.softmax(attn, dim=-1)
         # NOTE: dropout goes here
-        v = self.vW(v)  # (B,T,C) @ (C, h) -> (B, T, h)
-        out = attn @ v  # (B,T,T) @ (B,T,h) -> (B,T,h)
+        v = self.vW(v)  # (B, Te, C) @ (C, h) -> (B, Te, h)
+        out = attn @ v  # (B, Td, Te) @ (B, Te, h) -> (B, Td, h)
         return out
 
 

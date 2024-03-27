@@ -162,3 +162,4 @@ cython_debug/
 trained
 datasets
 *.sh
+.data*
