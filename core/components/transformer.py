@@ -17,6 +17,7 @@ class Head(nn.Module):
         q = self.qW(q)  # (B,T,C) @ (C, h) -> (B, T, h)
         attn = q @ k.transpose(-1, -2) * C**-0.5  # (B,T,h) @ (B,h,T) -> (B,T,T)
         if mask is not None:
+            # NOTE: masking should be done with mask[:Td, :Te]?
             attn = attn.masked_fill(mask[:T, :T] == 0, float("-inf"))
         attn = F.softmax(attn, dim=-1)
         # NOTE: dropout goes here
@@ -35,7 +36,7 @@ class MultiheadAttention(nn.Module):
         # NOTE: dropout goes here
 
     def forward(self, k, v, q, mask):
-        out = torch.cat([h(k, q, v, mask) for h in self.heads], dim=-1)
+        out = torch.cat([h(k=k, q=q, v=v, mask=mask) for h in self.heads], dim=-1)
         out = self.proj(out)
         return out
 
@@ -66,7 +67,7 @@ class TransformerBlock(nn.Module):
         self.ln1 = nn.LayerNorm(embedding_size)
         # NOTE: dropout goes here
         if self.is_decoder:
-            self.cross_attn = MultiheadAttention(num_heads, num_heads, head_size)
+            self.cross_attn = MultiheadAttention(embedding_size, num_heads, head_size)
             self.ln2 = nn.LayerNorm(embedding_size)
             # NOTE: dropout goes here
         self.ffwd = FeedForward(embedding_size)
@@ -112,7 +113,7 @@ class Decoder(nn.Module):
             [TransformerBlock(embedding_size, heads) for _ in range(layers)]
         )
 
-    def forward(self, dec_out, tgt_mask, enc_src, enc_mask):
+    def forward(self, dec_out, dec_mask, enc_src, enc_mask):
         for layer in self.layers:
-            x = layer(dec_out, tgt_mask, enc_src, enc_mask)
+            x = layer(dec_out, dec_mask, enc_src, enc_mask)
         return x
