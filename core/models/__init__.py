@@ -1,7 +1,9 @@
 import torch
 import torch.nn as nn
 
-from core.components import ConvLayer
+from core.components.cnn import ConvLayer
+from core.tokenizer import TokenEmbedding
+from core.components.transformer import Encoder, Decoder
 
 
 class ConvNet(nn.Module):
@@ -28,3 +30,41 @@ class ConvNet(nn.Module):
         x = self.conv6(x)
         # mean operation will output (BATCH_SIZE, EMBEDDING_SIZE), does it make sense?
         return x.mean(dim=(-1, -2))
+
+
+class Transformer(nn.Module):
+    def __init__(
+        self,
+        in_vocab_size,
+        out_vocab_size,
+        embedding_size,
+        max_len,
+        enc_layers,
+        dec_layers,
+        enc_heads,
+        dec_heads,
+        src_pad_id,
+        tgt_pad_id,
+    ):
+        super().__init__()
+        self.src_pad_id = src_pad_id
+        self.tgt_pad_id = tgt_pad_id
+        self.in_emb = TokenEmbedding(in_vocab_size, embedding_size, max_len)
+        self.out_emb = TokenEmbedding(out_vocab_size, embedding_size, max_len)
+        self.encoder = Encoder(embedding_size, enc_layers, enc_heads)
+        self.decoder = Decoder(embedding_size, dec_layers, dec_heads)
+        self.linear = nn.Linear(embedding_size, out_vocab_size)
+
+    def forward(self, x, y):
+        x_mask, y_mask = self.get_masks(x, y)
+        x_emb, y_emb = self.in_emb(x), self.out_emb(y)
+        x_enc = self.encoder(x_emb, x_mask)
+        out = self.decoder(y_emb, y_mask, x_enc, x_mask)
+        return self.linear(out)
+
+    def get_masks(self, x, y):
+        x_mask = (x != self.src_pad_id).unsqueeze(1)
+        tgt_seq_len = y.shape[1]
+        y_pad_mask = (y != self.tgt_pad_id).unsqueeze(1)
+        y_lh_mask = torch.tril(torch.ones(tgt_seq_len, tgt_seq_len, dtype=torch.long))
+        return x_mask, (y_pad_mask & y_lh_mask)
