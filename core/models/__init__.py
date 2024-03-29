@@ -2,7 +2,7 @@ import torch
 import torch.nn as nn
 
 from core.components.cnn import ConvLayer
-from core.tokenizer import TokenEmbedding
+from core.components.embedding import TokenEmbedding
 from core.components.transformer import Encoder, Decoder
 
 
