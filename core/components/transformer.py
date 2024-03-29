@@ -117,5 +117,5 @@ class Decoder(nn.Module):
 
     def forward(self, dec_out, dec_mask, enc_src, enc_mask):
         for layer in self.layers:
-            x = layer(dec_out, dec_mask, enc_src, enc_mask)
-        return x
+            dec_out = layer(dec_out, dec_mask, enc_src, enc_mask)
+        return dec_out
