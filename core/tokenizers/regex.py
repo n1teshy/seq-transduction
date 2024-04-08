@@ -1,6 +1,8 @@
+import os
 import regex as re
 
-from core.tokenizer.base import Tokenizer, get_stats, merge
+from core.config import special_tokens
+from core.tokenizers.base import Tokenizer, get_stats, merge
 
 GPT2_SPLIT_PATTERN = (
     r"""'(?:[sdmt]|ll|ve|re)| ?\p{L}+| ?\p{N}+| ?[^\s\p{L}\p{N}]+|\s+(?!\S)|\s+"""
@@ -21,8 +23,8 @@ class RegexTokenizer(Tokenizer):
         num_merges = vocab_size - 256
         text_chunks = re.findall(self.compiled_pattern, text)
         ids = [list(ch.encode("utf-8")) for ch in text_chunks]
-        merges = {}  # (int, int) -> int
-        vocab = {idx: bytes([idx]) for idx in range(256)}  # idx -> bytes
+        merges = {}
+        vocab = {idx: bytes([idx]) for idx in range(256)}
         for i in range(num_merges):
             stats = {}
             for chunk_ids in ids:
@@ -62,7 +64,7 @@ class RegexTokenizer(Tokenizer):
             stats = get_stats(ids)
             pair = min(stats, key=lambda p: self.merges.get(p, float("inf")))
             if pair not in self.merges:
-                break  # nothing else can be merged anymore
+                break
             idx = self.merges[pair]
             ids = merge(ids, pair, idx)
         return ids
@@ -71,7 +73,7 @@ class RegexTokenizer(Tokenizer):
         text_chunks = re.findall(self.compiled_pattern, text)
         ids = []
         for chunk in text_chunks:
-            chunk_bytes = chunk.encode("utf-8")  # raw bytes
+            chunk_bytes = chunk.encode("utf-8")
             chunk_ids = self._encode_chunk(chunk_bytes)
             ids.extend(chunk_ids)
         return ids
@@ -102,3 +104,17 @@ class RegexTokenizer(Tokenizer):
             else:
                 ids.extend(self.encode_ordinary(part))
         return ids
+
+
+def get_tokenizer(filepath, vocab_size, cache=None, verbose=False):
+    tokenizer = RegexTokenizer()
+    if os.path.exists(cache):
+        tokenizer.load(cache + ".model")
+    else:
+        text = "".join(open(filepath, encoding="utf-8").read().splitlines())
+        tokenizer.train(text, vocab_size, verbose=verbose)
+        tokenizer.register_special_tokens(
+            {token: tokenizer.size + idx for idx, token in enumerate(special_tokens)}
+        )
+    tokenizer.save(cache)
+    return tokenizer

@@ -2,6 +2,8 @@ import torch
 import torch.nn as nn
 import torch.nn.functional as F
 
+from core.config import dropout
+
 
 class Head(nn.Module):
     def __init__(self, embedding_size, head_size):
@@ -9,6 +11,7 @@ class Head(nn.Module):
         self.kW = nn.Linear(embedding_size, head_size)
         self.vW = nn.Linear(embedding_size, head_size)
         self.qW = nn.Linear(embedding_size, head_size)
+        self.dropout = nn.Dropout(dropout)
 
     def forward(self, k, v, q, mask):
         B, T, C = q.shape
@@ -22,7 +25,7 @@ class Head(nn.Module):
             # NOTE: masking should be done with mask[:Td, :Te]?
             attn = attn.masked_fill(mask[:, :T] == 0, float("-inf"))
         attn = F.softmax(attn, dim=-1)
-        # NOTE: dropout goes here
+        attn = self.dropout(attn)
         v = self.vW(v)  # (B, Te, C) @ (C, h) -> (B, Te, h)
         out = attn @ v  # (B, Td, Te) @ (B, Te, h) -> (B, Td, h)
         return out
@@ -35,12 +38,12 @@ class MultiheadAttention(nn.Module):
             [Head(embedding_size, head_size) for _ in range(num_heads)]
         )
         self.proj = nn.Linear(embedding_size, embedding_size)
-        # NOTE: dropout goes here
+        self.dropout = nn.Dropout(dropout)
 
     def forward(self, k, v, q, mask):
         out = torch.cat([h(k=k, q=q, v=v, mask=mask) for h in self.heads], dim=-1)
         out = self.proj(out)
-        return out
+        return self.dropout(out)
 
 
 class FeedForward(nn.Module):
@@ -50,7 +53,7 @@ class FeedForward(nn.Module):
             nn.Linear(embedding_size, embedding_size * 4),
             nn.ReLU(),
             nn.Linear(embedding_size * 4, embedding_size),
-            # NOTE: dropout goes here
+            nn.Dropout(dropout),
         )
 
     def forward(self, x):
@@ -67,11 +70,11 @@ class TransformerBlock(nn.Module):
         head_size = embedding_size // num_heads
         self.self_attn = MultiheadAttention(embedding_size, num_heads, head_size)
         self.ln1 = nn.LayerNorm(embedding_size)
-        # NOTE: dropout goes here
+        self.dropout1 = nn.Dropout(dropout)
         if self.is_decoder:
             self.cross_attn = MultiheadAttention(embedding_size, num_heads, head_size)
             self.ln2 = nn.LayerNorm(embedding_size)
-            # NOTE: dropout goes here
+            self.dropout2 = nn.Dropout(dropout)
         self.ffwd = FeedForward(embedding_size)
         self.ln3 = nn.LayerNorm(embedding_size)
 
@@ -81,11 +84,11 @@ class TransformerBlock(nn.Module):
         ), "decoder needs second input and mask"
         _x = first_inp
         x = self.self_attn(k=first_inp, q=first_inp, v=first_inp, mask=first_mask)
-        x = self.ln1(x + _x)
+        x = self.dropout1(self.ln1(x + _x))
         if self.is_decoder:
             _x = x
             x = self.cross_attn(k=second_inp, v=second_inp, q=x, mask=second_mask)
-            x = self.ln2(x + _x)
+            x = self.dropout2(self.ln2(x + _x))
         _x = x
         x = self.ffwd(x)
         x = self.ln3(x + _x)

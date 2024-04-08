@@ -1,6 +1,7 @@
 import torch
 import torch.nn as nn
 
+from core.config import device
 from core.components.cnn import ConvLayer
 from core.components.embedding import TokenEmbedding
 from core.components.transformer import Encoder, Decoder
@@ -66,5 +67,19 @@ class Transformer(nn.Module):
         x_mask = (x != self.src_pad_id).unsqueeze(1)
         tgt_seq_len = y.shape[1]
         y_pad_mask = (y != self.tgt_pad_id).unsqueeze(1)
-        y_lh_mask = torch.tril(torch.ones(tgt_seq_len, tgt_seq_len, dtype=torch.long))
+        y_lh_mask = torch.tril(
+            torch.ones(tgt_seq_len, tgt_seq_len, dtype=torch.long, device=device)
+        )
         return x_mask, (y_pad_mask & y_lh_mask)
+
+    @staticmethod
+    def spawn(*args, **kwargs):
+        cache = None
+        if "cache" in kwargs:
+            cache = kwargs["cache"]
+            del kwargs["cache"]
+        model = Transformer(*args, **kwargs)
+        model = model.to(device)
+        if cache is not None:
+            model.load_state_dict(torch.load(cache, map_location=device))
+        return model
