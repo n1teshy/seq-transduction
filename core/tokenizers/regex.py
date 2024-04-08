@@ -107,12 +107,12 @@ class RegexTokenizer(Tokenizer):
 
 
 def get_tokenizer(filepath, vocab_size, cache=None, verbose=False):
-    print(f"cache was passed as '{cache}', will check if {cache + '.model'} exists")
+    # print(f"cache was passed as '{cache}', will check if {cache + '.model'} exists")
     tokenizer = RegexTokenizer()
-    print(
-        f"cache exitst? ", False if cache is None else os.path.exists(cache + ".model")
-    )
-    if cache is not None and os.path.exists(cache + ".model"):
+    # print(
+    #     f"cache exitst? ", False if cache is None else os.path.exists(cache + ".model")
+    # )
+    if True:
         tokenizer.load(cache + ".model")
     else:
         text = "".join(open(filepath, encoding="utf-8").read().splitlines())
