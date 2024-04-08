@@ -3,7 +3,7 @@ import unicodedata
 
 def get_stats(ids, counts=None):
     counts = {} if counts is None else counts
-    for pair in zip(ids, ids[1:]):  # iterate consecutive elements
+    for pair in zip(ids, ids[1:]):
         counts[pair] = counts.get(pair, 0) + 1
     return counts
 
@@ -21,17 +21,17 @@ def merge(ids, pair, idx):
     return newids
 
 
-def replace_control_characters(s: str) -> str:
+def replace_control_characters(s) -> str:
     chars = []
     for ch in s:
         if unicodedata.category(ch)[0] != "C":
-            chars.append(ch)  # this character is ok
+            chars.append(ch)
         else:
-            chars.append(f"\\u{ord(ch):04x}")  # escape
+            chars.append(f"\\u{ord(ch):04x}")
     return "".join(chars)
 
 
-def render_token(t: bytes) -> str:
+def render_token(t) -> str:
     s = t.decode("utf-8", errors="replace")
     s = replace_control_characters(s)
     return s
@@ -39,10 +39,10 @@ def render_token(t: bytes) -> str:
 
 class Tokenizer:
     def __init__(self):
-        self.merges = {}  # (int, int) -> int
-        self.pattern = ""  # str
-        self.special_tokens = {}  # str -> int, e.g. {'<|endoftext|>': 100257}
-        self.vocab = self._build_vocab()  # int -> bytes
+        self.merges = {}
+        self.pattern = ""
+        self.special_tokens = {}
+        self.vocab = self._build_vocab()
 
     @property
     def size(self):

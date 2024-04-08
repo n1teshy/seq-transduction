@@ -1,6 +1,6 @@
 import regex as re
 
-from .base import Tokenizer, get_stats, merge
+from core.tokenizer.base import Tokenizer, get_stats, merge
 
 GPT2_SPLIT_PATTERN = (
     r"""'(?:[sdmt]|ll|ve|re)| ?\p{L}+| ?\p{N}+| ?[^\s\p{L}\p{N}]+|\s+(?!\S)|\s+"""
@@ -9,7 +9,6 @@ GPT4_SPLIT_PATTERN = r"""'(?i:[sdmt]|ll|ve|re)|[^\r\n\p{L}\p{N}]?+\p{L}+|\p{N}{1
 
 
 class RegexTokenizer(Tokenizer):
-
     def __init__(self, pattern=None):
         super().__init__()
         self.pattern = GPT4_SPLIT_PATTERN if pattern is None else pattern
