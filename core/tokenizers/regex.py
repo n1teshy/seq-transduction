@@ -108,7 +108,7 @@ class RegexTokenizer(Tokenizer):
 
 def get_tokenizer(filepath, vocab_size, cache=None, verbose=False):
     tokenizer = RegexTokenizer()
-    if os.path.exists(cache):
+    if cache is not None and os.path.exists(cache + ".model"):
         tokenizer.load(cache + ".model")
     else:
         text = "".join(open(filepath, encoding="utf-8").read().splitlines())
