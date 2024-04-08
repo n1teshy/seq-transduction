@@ -108,6 +108,9 @@ class RegexTokenizer(Tokenizer):
 
 def get_tokenizer(filepath, vocab_size, cache=None, verbose=False):
     tokenizer = RegexTokenizer()
+    print(
+        f"cache exitst? ", False if cache is None else os.path.exists(cache + ".model")
+    )
     if cache is not None and os.path.exists(cache + ".model"):
         tokenizer.load(cache + ".model")
     else:
