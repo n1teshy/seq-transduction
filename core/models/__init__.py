@@ -64,7 +64,9 @@ class Transformer(nn.Module):
         x_mask, y_mask = self.get_masks(x, y)
         x_emb, y_emb = self.in_emb(x), self.out_emb(y)
         x_enc = self.encoder(x_emb, x_mask)
-        out = self.decoder(y_emb, y_mask, x_enc, x_mask)
+        out = self.decoder(
+            dec_out=y_emb, dec_mask=y_mask, enc_in=x_enc, enc_mask=x_mask
+        )
         return self.linear(out)
 
     def get_masks(self, x, y):
@@ -78,9 +80,8 @@ class Transformer(nn.Module):
 
     @staticmethod
     def spawn(*args, **kwargs):
-        cache = None
-        if "cache" in kwargs:
-            cache = kwargs["cache"]
+        cache = kwargs.get("cache", None)
+        if cache is not None:
             del kwargs["cache"]
         model = Transformer(*args, **kwargs)
         model = model.to(device)

@@ -13,7 +13,7 @@ class Head(nn.Module):
         self.qW = nn.Linear(embedding_size, head_size)
         self.dropout = nn.Dropout(dropout)
 
-    def forward(self, k, v, q, mask):
+    def forward(self, k, v, q, mask=None):
         B, T, C = q.shape
         # h = head_size
         k = self.kW(k)  # (B, Te, C) @ (C, h) -> (B, Te, h)
@@ -22,7 +22,6 @@ class Head(nn.Module):
             q @ k.transpose(-1, -2) * C**-0.5
         )  # (B, Td, h) @ (B, h, Te) -> (B, Td, Te)
         if mask is not None:
-            # NOTE: masking should be done with mask[:Td, :Te]?
             attn = attn.masked_fill(mask[:, :T] == 0, float("-inf"))
         attn = F.softmax(attn, dim=-1)
         attn = self.dropout(attn)
@@ -40,7 +39,7 @@ class MultiheadAttention(nn.Module):
         self.proj = nn.Linear(embedding_size, embedding_size)
         self.dropout = nn.Dropout(dropout)
 
-    def forward(self, k, v, q, mask):
+    def forward(self, k, v, q, mask=None):
         out = torch.cat([h(k=k, q=q, v=v, mask=mask) for h in self.heads], dim=-1)
         out = self.proj(out)
         return self.dropout(out)
@@ -78,7 +77,7 @@ class TransformerBlock(nn.Module):
         self.ffwd = FeedForward(embedding_size)
         self.ln3 = nn.LayerNorm(embedding_size)
 
-    def forward(self, first_inp, first_mask, second_inp=None, second_mask=None):
+    def forward(self, first_inp, first_mask=None, second_inp=None, second_mask=None):
         assert not (
             self.is_decoder and (second_inp is None or second_mask is None)
         ), "decoder needs second input and mask"
@@ -96,29 +95,34 @@ class TransformerBlock(nn.Module):
 
 
 class Encoder(nn.Module):
-    def __init__(self, embedding_size, layers, heads):
+    def __init__(self, embedding_size, blocks, heads):
         super().__init__()
-        self.layers = nn.ModuleList(
+        self.blocks = nn.ModuleList(
             [
                 TransformerBlock(embedding_size, heads, is_decoder=False)
-                for _ in range(layers)
+                for _ in range(blocks)
             ]
         )
 
-    def forward(self, x, mask):
-        for layer in self.layers:
-            x = layer(x, mask)
+    def forward(self, x, mask=None):
+        for block in self.blocks:
+            x = block(first_inp=x, first_mask=mask)
         return x
 
 
 class Decoder(nn.Module):
-    def __init__(self, embedding_size, layers, heads):
+    def __init__(self, embedding_size, blocks, heads):
         super().__init__()
-        self.layers = nn.ModuleList(
-            [TransformerBlock(embedding_size, heads) for _ in range(layers)]
+        self.blocks = nn.ModuleList(
+            [TransformerBlock(embedding_size, heads) for _ in range(blocks)]
         )
 
-    def forward(self, dec_out, dec_mask, enc_src, enc_mask):
-        for layer in self.layers:
-            dec_out = layer(dec_out, dec_mask, enc_src, enc_mask)
+    def forward(self, dec_out, enc_in, dec_mask=None, enc_mask=None):
+        for block in self.blocks:
+            dec_out = block(
+                first_inp=dec_out,
+                first_mask=dec_mask,
+                second_inp=enc_in,
+                second_mask=enc_mask,
+            )
         return dec_out
