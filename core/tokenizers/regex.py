@@ -116,5 +116,6 @@ def get_tokenizer(filepath, vocab_size, cache=None, verbose=False):
         tokenizer.register_special_tokens(
             {token: tokenizer.size + idx for idx, token in enumerate(special_tokens)}
         )
-    tokenizer.save(cache)
+    if cache:
+        tokenizer.save(cache)
     return tokenizer
