@@ -48,7 +48,7 @@ class OCRDataset(Dataset):
                 transforms.ToTensor(),
             ]
         )
-        tokens = [torch.tensor(t, device=device) for t in tokens]
+        tokens = [torch.tensor(t) for t in tokens]
         tokens = pad_sequence(tokens, padding_value=self.pad_id, batch_first=True)
         images = torch.stack([transform(image) for image in images], dim=0)
-        return images, tokens
+        return images.to(device), tokens.to(device)
