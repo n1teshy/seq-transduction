@@ -88,3 +88,42 @@ class Transformer(nn.Module):
         if cache is not None:
             model.load_state_dict(torch.load(cache, map_location=device))
         return model
+
+
+class OCR(nn.Module):
+    def __init__(
+        self,
+        encoder,
+        out_vocab_size,
+        embedding_size,
+        max_len,
+        dec_layers,
+        dec_heads,
+        tgt_pad_id,
+    ):
+        super().__init__()
+        self.encoder = encoder
+        self.tgt_pad_id = tgt_pad_id
+        self.embedding = TokenEmbedding(out_vocab_size, embedding_size, max_len)
+        self.decoder = Decoder(embedding_size, dec_layers, dec_heads)
+        self.linear = nn.Linear(embedding_size, out_vocab_size)
+
+    def forward(self, pixels, text):
+        mask = self.get_mask(text)
+        emb_tokens = self.embedding(text)
+        x_enc = self.encoder(pixels).unsqueeze(1)
+        out = self.decoder(dec_out=emb_tokens, dec_mask=mask, enc_in=x_enc)
+        return self.linear(out)
+
+    def get_mask(self, text):
+        tgt_seq_len = text.shape[1]
+        y_pad_mask = (text != self.tgt_pad_id).unsqueeze(1)
+        y_lh_mask = torch.tril(
+            torch.ones(tgt_seq_len, tgt_seq_len, dtype=torch.long, device=device)
+        )
+        return y_pad_mask & y_lh_mask
+
+    @staticmethod
+    def spawn(*args, **kwargs):
+        model = OCR(*args, **kwargs)
+        return model.to(device)

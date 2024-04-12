@@ -78,9 +78,6 @@ class TransformerBlock(nn.Module):
         self.ln3 = nn.LayerNorm(embedding_size)
 
     def forward(self, first_inp, first_mask=None, second_inp=None, second_mask=None):
-        assert not (
-            self.is_decoder and (second_inp is None or second_mask is None)
-        ), "decoder needs second input and mask"
         _x = first_inp
         x = self.self_attn(k=first_inp, q=first_inp, v=first_inp, mask=first_mask)
         x = self.dropout1(self.ln1(x + _x))
