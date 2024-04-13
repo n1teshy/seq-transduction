@@ -13,11 +13,11 @@ class OCRDataset(Dataset):
         super().__init__()
         self.folder = folder
         self.tokenizer = tokenizer
-        self.img_to_tokens = self.get_mapping(mapping_file)
-        self.filenames = self.get_file_names()
         self.pad_id = tokenizer.special_tokens[TOKEN_PAD]
         self.bos_id = tokenizer.special_tokens[TOKEN_BOS]
         self.eos_id = tokenizer.special_tokens[TOKEN_EOS]
+        self.img_to_tokens = self.get_mapping(mapping_file)
+        self.filenames = self.get_file_names()
 
     def __len__(self):
         return len(self.filenames)
