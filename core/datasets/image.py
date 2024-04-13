@@ -5,7 +5,7 @@ from PIL import Image
 from torch.utils.data import Dataset
 from torch.nn.utils.rnn import pad_sequence
 from torchvision import transforms
-from core.config import device, TOKEN_PAD
+from core.config import device, TOKEN_PAD, TOKEN_BOS, TOKEN_EOS
 
 
 class OCRDataset(Dataset):
@@ -16,6 +16,8 @@ class OCRDataset(Dataset):
         self.img_to_tokens = self.get_mapping(mapping_file)
         self.filenames = self.get_file_names()
         self.pad_id = tokenizer.special_tokens[TOKEN_PAD]
+        self.bos_id = tokenizer.special_tokens[TOKEN_BOS]
+        self.eos_id = tokenizer.special_tokens[TOKEN_EOS]
 
     def __len__(self):
         return len(self.filenames)
@@ -31,7 +33,9 @@ class OCRDataset(Dataset):
         for line in open(os.path.join(self.folder, mapping_file)):
             line = line.strip("\n")
             splits = line.split(":", maxsplit=1)
-            mapping[splits[0]] = self.tokenizer.encode(splits[1])
+            mapping[splits[0]] = (
+                [self.bos_id] + self.tokenizer.encode(splits[1]) + [self.eos_id]
+            )
         return mapping
 
     def get_file_names(self):
