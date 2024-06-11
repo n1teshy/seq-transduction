@@ -1,9 +1,10 @@
 import os
 import platform
 
-if not os.path.exists("ocr_data.zip"):
-    print("upload images")
-    exit()
+if not os.path.isfile("ocr_data.zip"):
+    if not os.path.isdir("data"):
+        print("upload images")
+        exit()
 elif platform.system() == "Linux":
     os.system(
         "git clone https://github.com/n1teshy/sequence-transduction && mv sequence-transduction/core . && rm -rf sequence-transduction"
@@ -33,7 +34,7 @@ from core.models import OCR, resnet18
 from torch.utils.data import DataLoader
 from core.datasets.image import OCRDataset
 from core.tokenizers.regex import get_tokenizer
-from core.utils import get_param_count, DualLogger
+from core.utils import get_param_count, DualLogger, kaiming_init
 
 cnn_fn = resnet18
 logger = DualLogger("model.log")
@@ -42,12 +43,12 @@ signal.signal(signal.SIGINT, lambda _, __: interrupted.set())
 
 
 EPOCHS = 100
-LEARNING_RATE = 0.001
-EMBEDDING_SIZE = 256
+LEARNING_RATE = 0.003
+EMBEDDING_SIZE = 288
 VOCAB_SZE = None
 MAX_LEN = 100
 DEC_LAYERS = 5
-DEC_HEADS = 4
+DEC_HEADS = 8
 PADDING_ID = None
 MIN_PROGRESS = 0.1
 BATCH_SIZE = 8
@@ -116,11 +117,16 @@ model = OCR.spawn(
     tgt_pad_id=PADDING_ID,
 )
 # model.load_state_dict(torch.load("", map_location=device))
+kaiming_init(model)
 model_param_count = get_param_count(model)
 resnet_param_count = get_param_count(ENCODER)
 logger.log(
-    "parameters: %.4f, %.4f + %.4f"
-    % (model_param_count, resnet_param_count, model_param_count - resnet_param_count)
+    "parameters: %.4fmn (%.4f + %.4f)"
+    % (
+        model_param_count / 1e6,
+        resnet_param_count / 1e6,
+        (model_param_count - resnet_param_count) / 1e6,
+    )
 )
 optimizer = torch.optim.AdamW(model.parameters(), lr=LEARNING_RATE)
 

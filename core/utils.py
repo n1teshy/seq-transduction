@@ -1,9 +1,9 @@
 import os
 import torch
+import torch.nn.init as init
 
 from datetime import datetime
 from pathlib import Path
-from core.config import device
 
 
 def get_param_count(model):
@@ -14,12 +14,11 @@ def get_root():
     return Path(os.path.abspath(__file__ + "/../.."))
 
 
-def kaiming_init(model):
-    def init(m):
-        if hasattr(m, "weight") and m.weight.dim() > 1:
-            torch.nn.init.kaiming_uniform(m.weight.data)
-
-    model.apply(init)
+def kaiming_init(m):
+    if hasattr(m, "weight"):
+        init.kaiming_normal_(m.weight)
+        if m.bias is not None:
+            init.constant_(m.bias, 0)
 
 
 class DualLogger:
