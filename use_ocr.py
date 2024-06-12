@@ -78,15 +78,15 @@ PADDING_ID = train_dataset.pad_id
 train_dataloader = DataLoader(
     train_dataset, collate_fn=train_dataset.collate, batch_size=BATCH_SIZE, shuffle=True
 )
-test_dataloader = DataLoader(
+val_dataloader = DataLoader(
     val_dataset, collate_fn=val_dataset.collate, batch_size=BATCH_SIZE, shuffle=True
 )
 
 
 @torch.no_grad()
-def get_test_loss(model):
+def get_val_loss(model):
     model.eval()
-    for pixels, tokens in test_dataloader:
+    for pixels, tokens in val_dataloader:
         break
     logits = model(pixels, tokens[:, :-1])
     B, T, C = logits.shape
@@ -142,7 +142,7 @@ for epoch in range(1, EPOCHS + 1):
             t_loss.backward()
             optimizer.step()
             t_loss = t_loss.item()
-            v_loss = get_test_loss(model).item()
+            v_loss = get_val_loss(model).item()
             mt_loss = (mt_loss or t_loss) * mn_loss_wt + t_loss * cur_loss_wt
             mv_loss = (mv_loss or v_loss) * mn_loss_wt + v_loss * cur_loss_wt
             logger.log(
