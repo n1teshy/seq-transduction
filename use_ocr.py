@@ -7,7 +7,7 @@ if not os.path.isfile("ocr_data.zip"):
         exit()
 elif platform.system() == "Linux":
     os.system(
-        "git clone https://github.com/n1teshy/sequence-transduction && mv sequence-transduction/core . && rm -rf sequence-transduction"
+        "git clone https://github.com/n1teshy/seq-transduction && mv seq-transduction/core . && rm -rf seq-transduction"
     )
     os.system(
         "git clone https://github.com/n1teshy/cache && mv cache/ocr/tokenizers . && rm -rf cache"
@@ -15,7 +15,7 @@ elif platform.system() == "Linux":
     os.system("unzip ocr_data.zip -d . > /dev/null && rm ocr_data.zip")
 else:
     os.system(
-        "git clone https://github.com/n1teshy/sequence-transduction & move sequence-transduction/core . & rd /s /q sequence-transduction"
+        "git clone https://github.com/n1teshy/seq-transduction & move seq-transduction/core . & rd /s /q seq-transduction"
     )
     os.system(
         "git clone https://github.com/n1teshy/cache & move cache/ocr/tokenizers . & rd /s /q cache"
