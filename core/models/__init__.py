@@ -7,6 +7,12 @@ from core.components.embedding import TokenEmbedding
 from core.components.transformer import Encoder, Decoder
 
 
+def resnet17(in_channels=1, num_classes=100):
+    return ResNet(
+        BasicBlock, [2, 2, 2, 1], in_chanels=in_channels, num_classes=num_classes
+    )
+
+
 def resnet18(in_channels=1, num_classes=100):
     return ResNet(
         BasicBlock, [2, 2, 2, 2], in_chanels=in_channels, num_classes=num_classes

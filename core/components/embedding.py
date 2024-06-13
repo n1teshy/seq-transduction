@@ -10,7 +10,6 @@ class TokenEmbedding(nn.Module):
         self.tok_emb = nn.Embedding(vocab_size, embedding_size)
         # NOTE: use device param to get the pos_emb tensor on device
         self.pos_emb = torch.zeros(max_len, embedding_size, device=device)
-        self.pos_emb.requires_grad = False
 
         pos = torch.arange(0, max_len, device=device)
         pos = pos.float().unsqueeze(dim=1)

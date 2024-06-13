@@ -17,7 +17,7 @@ class BasicBlock(nn.Module):
                 bias=False,
             ),
             nn.BatchNorm2d(out_channels),
-            nn.ReLU(inplace=True),
+            nn.GELU(),
             nn.Conv2d(
                 out_channels,
                 out_channels * BasicBlock.expansion,
@@ -41,7 +41,7 @@ class BasicBlock(nn.Module):
             )
 
     def forward(self, x):
-        return nn.ReLU(inplace=True)(self.residual_function(x) + self.shortcut(x))
+        return nn.GELU()(self.residual_function(x) + self.shortcut(x))
 
 
 class BottleNeck(nn.Module):
@@ -52,7 +52,7 @@ class BottleNeck(nn.Module):
         self.residual_function = nn.Sequential(
             nn.Conv2d(in_channels, out_channels, kernel_size=1, bias=False),
             nn.BatchNorm2d(out_channels),
-            nn.ReLU(inplace=True),
+            nn.GELU(),
             nn.Conv2d(
                 out_channels,
                 out_channels,
@@ -62,7 +62,7 @@ class BottleNeck(nn.Module):
                 bias=False,
             ),
             nn.BatchNorm2d(out_channels),
-            nn.ReLU(inplace=True),
+            nn.GELU(),
             nn.Conv2d(
                 out_channels,
                 out_channels * BottleNeck.expansion,
@@ -85,7 +85,7 @@ class BottleNeck(nn.Module):
             )
 
     def forward(self, x):
-        return nn.ReLU(inplace=True)(self.residual_function(x) + self.shortcut(x))
+        return nn.GELU()(self.residual_function(x) + self.shortcut(x))
 
 
 class ResNet(nn.Module):
@@ -95,7 +95,7 @@ class ResNet(nn.Module):
         self.conv1 = nn.Sequential(
             nn.Conv2d(in_chanels, 64, kernel_size=3, padding=1, bias=False),
             nn.BatchNorm2d(64),
-            nn.ReLU(inplace=True),
+            nn.GELU(),
         )
         self.conv2_x = self._make_layer(block, 64, num_block[0], 1)
         self.conv3_x = self._make_layer(block, 128, num_block[1], 2)
