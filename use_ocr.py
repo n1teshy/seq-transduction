@@ -167,7 +167,9 @@ def progress_monitor(e_no, b_no, t_loss, v_loss, mt_loss, mv_loss):
         "%d:%d -> %.4f(mean:%.4f), %.4f(mean:%.4f)"
         % (e_no, b_no, t_loss, mt_loss, v_loss, mv_loss)
     )
-    if e_no * b_no >= mean_window and last_saved_at - mv_loss >= MIN_PROGRESS:
+    if (
+        e_no > 1 or len(t_losses) >= mean_window
+    ) and last_saved_at - mv_loss >= MIN_PROGRESS:
         if abs(mt_loss - mv_loss) < MAX_LOSS_DIFF:
             save_model(mt_loss, mv_loss)
             last_saved_at = mv_loss
