@@ -120,9 +120,9 @@ class OCR(nn.Module):
         self.decoder = Decoder(embedding_size, dec_layers, dec_heads)
         self.linear = nn.Linear(embedding_size, out_vocab_size)
 
-    def forward(self, pixels, text):
-        mask = self.get_mask(text)
-        emb_tokens = self.embedding(text)
+    def forward(self, pixels, tokens):
+        mask = self.get_mask(tokens)
+        emb_tokens = self.embedding(tokens)
         x_enc = self.encoder(pixels).unsqueeze(1)
         out = self.decoder(dec_out=emb_tokens, dec_mask=mask, enc_in=x_enc)
         return self.linear(out)
