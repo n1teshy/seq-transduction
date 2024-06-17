@@ -59,13 +59,14 @@ ENCODER = cnn_fn(num_classes=EMBEDDING_SIZE)
 
 mean_window = 400
 accumulation_steps = 4
-last_saved_at = float("inf")
 cur_loss_wt = 1 / mean_window
 mn_loss_wt = 1 - cur_loss_wt
-t_loss_sum, v_loss_sum = 0, 0
-t_losses, v_losses = deque(maxlen=mean_window), deque(maxlen=mean_window)
 param_dir = f"cnn_{cnn_fn.__name__}_emb_{EMBEDDING_SIZE}_lyrs_{DEC_LAYERS}_hds_{DEC_HEADS}_mxlen_{MAX_LEN}"
 os.makedirs(param_dir, exist_ok=True)
+
+last_saved_at = float("inf")
+t_loss_sum, v_loss_sum = 0, 0
+t_losses, v_losses = deque(maxlen=mean_window), deque(maxlen=mean_window)
 
 
 tokenizer = get_tokenizer("", 256, "tokenizers/en")
